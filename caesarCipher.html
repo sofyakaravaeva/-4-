@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Шифровальщик / Дешифровальщик</title>
+    <style>
+        /* Стили CSS остаются прежними для сохранения вида */
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f4f7f6;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            color: #333;
+        }
+
+        .container {
+            background-color: #ffffff;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            width: 90%;
+            max-width: 800px;
+        }
+
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 30px;
+        }
+
+        .section {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #34495e;
+        }
+
+        textarea, input[type="text"] {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            box-sizing: border-box;
+            font-size: 16px;
+            resize: vertical;
+            transition: border-color 0.3s;
+        }
+
+        textarea:focus, input[type="text"]:focus {
+            border-color: #3498db;
+            outline: none;
+        }
+
+        /* Поле только для чисел (ключа) */
+        #keyInput {
+            width: 150px;
+            text-align: center;
+        }
+
+        /* Стили для кнопок */
+        .buttons {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 30px;
+        }
+
+        button {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: background-color 0.3s, transform 0.1s;
+        }
+
+        #encryptBtn {
+            background-color: #2ecc71; /* Зеленый */
+            color: white;
+        }
+
+        #decryptBtn {
+            background-color: #e74c3c; /* Красный */
+            color: white;
+        }
+
+        button:hover {
+            opacity: 0.9;
+        }
+
+        button:active {
+            transform: scale(0.98);
+        }
+
+        /* Стиль для окна вывода, чтобы оно выглядело как вывод */
+        #outputArea {
+            background-color: #ecf0f1;
+            min-height: 100px;
+            border: 1px dashed #bdc3c7;
+        }
+
+        /* Дополнительный стиль для поля ввода зашифрованного текста */
+        #cipherInputArea {
+            background-color: #f7f9fb;
+            border: 1px solid #bdc3c7;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Шифровальщик Цезаря</h1>
+        <hr>
+
+        <div class="section">
+            <label for="inputArea">Текст для шифрования:</label>
+            <textarea id="inputArea" rows="4" placeholder="Введите текст, который нужно зашифровать..."></textarea>
+        </div>
+
+        <div class="section">
+            <label for="keyInput">Ключ сдвига (только число):</label>
+            <input type="text" id="keyInput" placeholder="Например, 3" value="3" pattern="[0-9]*" inputmode="numeric">
+        </div>
+
+        <div class="buttons">
+            <button id="encryptBtn">Зашифровать</button>
+        </div>
+
+        <hr>
+
+        <div class="section">
+            <label for="cipherInputArea">Текст для дешифрования:</label>
+            <textarea id="cipherInputArea" rows="4" placeholder="Вставьте зашифрованный текст для расшифровки..."></textarea>
+        </div>
+
+        <div class="buttons">
+            <button id="decryptBtn">Расшифровать</button>
+        </div>
+
+        <hr>
+
+        <div class="section">
+            <label for="outputArea">Результат:</label>
+            <textarea id="outputArea" rows="4" readonly placeholder="Результат шифрования или дешифрования появится здесь..."></textarea>
+        </div>
+    </div>
+
+    <script>
+        //Шифра Цезаря
+        function caesarCipher(text, key, decrypt = false) {
+            const shift = decrypt ? -key : key;
+            let result = '';
+
+            for (let i = 0; i < text.length; i++) {
+                let char = text[i];
+                let code = char.charCodeAt(0);
+
+                //латинские и русские буквы
+                if ((code >= 65 && code <= 90) || (code >= 97 && code <= 122) || (code >= 1040 && code <= 1103)) {
+                    let start;
+                    let end;
+
+                    // Определяем диапазон
+                    if (code >= 65 && code <= 90) { // Латиница, заглавные
+                        start = 65; end = 90;
+                    } else if (code >= 97 && code <= 122) { // Латиница, строчные
+                        start = 97; end = 122;
+                    } else if (code >= 1040 && code <= 1071) { // Кириллица, заглавные (А-Я)
+                        start = 1040; end = 1071;
+                    } else if (code >= 1072 && code <= 1103) { // Кириллица, строчные (а-я)
+                        start = 1072; end = 1103;
+                    } else {
+                        result += char;
+                        continue;
+                    }
+
+                    const alphabetSize = (end - start) + 1;
+                    
+                    let newCode = code - start;
+                    newCode = (newCode + shift) % alphabetSize;
+
+                    //для отрицательного сдвига
+                    if (newCode < 0) {
+                        newCode += alphabetSize;
+                    }
+
+                    result += String.fromCharCode(newCode + start);
+
+                } else {
+                    // Оставляем небуквенные символы как есть
+                    result += char;
+                }
+            }
+
+            return result;
+        }
+
+
+        // Зашифровать
+        document.getElementById('encryptBtn').addEventListener('click', () => {
+            const inputText = document.getElementById('inputArea').value; // Берем из поля ОТКРЫТОГО текста
+            const keyInput = document.getElementById('keyInput').value;
+
+            const key = parseInt(keyInput, 10);
+            if (isNaN(key)) {
+                alert('Пожалуйста, введите корректный числовой ключ.');
+                return;
+            }
+
+            const encryptedText = caesarCipher(inputText, key, false); // false = шифрование
+            document.getElementById('outputArea').value = encryptedText; // Выводим в поле РЕЗУЛЬТАТА
+        });
+
+        // Расшифровать
+        document.getElementById('decryptBtn').addEventListener('click', () => {
+            // берем текст из нового поля cipherInputArea
+            const inputText = document.getElementById('cipherInputArea').value; 
+            const keyInput = document.getElementById('keyInput').value;
+
+            const key = parseInt(keyInput, 10);
+            if (isNaN(key)) {
+                alert('Пожалуйста, введите корректный числовой ключ.');
+                return;
+            }
+
+            const decryptedText = caesarCipher(inputText, key, true); // true = дешифрование
+            document.getElementById('outputArea').value = decryptedText; 
+        });
+
+        // Ограничение на ввод только чисел в поле ключа 
+        document.getElementById('keyInput').addEventListener('input', (event) => {
+            event.target.value = event.target.value.replace(/[^0-9]/g, '');
+        });
+    </script>
+</body>
+</html>
