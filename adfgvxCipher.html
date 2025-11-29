@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Шифровальщик / Дешифровальщик ADFGVX</title>
+    <style>
+        /* CSS стили для оформления */
+        body { font-family: 'Arial', sans-serif; background-color: #f4f7f6; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; color: #333; }
+        .container { background-color: #ffffff; padding: 30px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1); width: 90%; max-width: 800px; }
+        h1 { text-align: center; color: #2c3e50; margin-bottom: 20px; }
+        .section { margin-bottom: 20px; }
+        label { display: block; margin-bottom: 8px; font-weight: bold; color: #34495e; }
+        textarea, input[type="text"] { width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; font-size: 16px; resize: vertical; }
+        .buttons { display: flex; justify-content: space-around; margin-top: 20px; }
+        button { padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: bold; transition: background-color 0.3s; }
+        #encryptBtn { background-color: #3498db; color: white; }
+        #decryptBtn { background-color: #e74c3c; color: white; }
+        #keyTranspositionInput { width: 300px; text-align: left; }
+        #gridInfo { background-color: #ecf0f1; padding: 10px; border-radius: 6px; font-size: 14px; margin-top: 10px; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Шифровальщик ADFGVX</h1>
+        <hr>
+
+        <div class="section">
+            <label for="keyTranspositionInput">Слово-ключ перестановки (только латинские буквы):</label>
+            <input type="text" id="keyTranspositionInput" placeholder="Например, SECRETKEY" value="PRIVACY" inputmode="text">
+            <div id="gridInfo">
+                <p><strong>Ключ-сетка:</strong> Фиксированный для этого примера (26 латинских букв(от A до Z) + 10 цифр(от 0 до 9)).</p>
+                
+            </div>
+        </div>
+        <hr>
+
+        <div class="section">
+            <label for="inputArea">Текст для шифрования (только латинские буквы и цифры):</label>
+            <textarea id="inputArea" rows="4" placeholder="Введите текст, который нужно зашифровать..."></textarea>
+        </div>
+
+        <div class="buttons">
+            <button id="encryptBtn">Зашифровать</button>
+        </div>
+
+        <hr>
+
+        <div class="section">
+            <label for="cipherInputArea">Текст для дешифрования (только A, D, F, G, V, X):</label>
+            <textarea id="cipherInputArea" rows="4" placeholder="Вставьте зашифрованный текст для расшифровки..."></textarea>
+        </div>
+
+        <div class="buttons">
+            <button id="decryptBtn">Расшифровать</button>
+        </div>
+
+        <hr>
+
+        <div class="section">
+            <label for="outputArea">Результат:</label>
+            <textarea id="outputArea" rows="4" readonly placeholder="Результат шифрования или дешифрования появится здесь..."></textarea>
+        </div>
+    </div>
+
+    <script>
+
+        const ADFGVX_CHARS = "ADFGVX";
+        const POLYBIUS_GRID = [
+            ['A', 'B', 'C', 'D', 'E', 'F'],
+            ['G', 'H', 'I', 'J', 'K', 'L'],
+            ['M', 'N', 'O', 'P', 'Q', 'R'],
+            ['S', 'T', 'U', 'V', 'W', 'X'],
+            ['Y', 'Z', '0', '1', '2', '3'],
+            ['4', '5', '6', '7', '8', '9']
+        ];
+        
+        function substitute(text) {
+            let substitutedText = '';
+            
+            const cleanedText = text.toUpperCase().replace(/[^A-Z0-9]/g, '');
+
+            for (const char of cleanedText) {
+                let found = false;
+                for (let r = 0; r < 6; r++) {
+                    for (let c = 0; c < 6; c++) {
+                        if (POLYBIUS_GRID[r][c] === char) {
+                            // Составляем пару: РЯД + СТОЛБЕЦ
+                            substitutedText += ADFGVX_CHARS[r] + ADFGVX_CHARS[c];
+                            found = true;
+                            break;
+                        }
+                    }
+                    if (found) break;
+                }
+                if (!found) {
+                    console.error("Символ не найден в сетке:", char);
+                }
+            }
+            return substitutedText;
+        }
+
+        function columnarTransposition(text, key) {
+            const keyLetters = key.toUpperCase().replace(/[^A-Z]/g, '').split('');
+            const numColumns = keyLetters.length;
+            const textLength = text.length;
+
+            if (numColumns === 0) return text;
+
+          
+            let columns = Array.from({ length: numColumns }, () => []);
+            for (let i = 0; i < textLength; i++) {
+                const colIndex = i % numColumns;
+                columns[colIndex].push(text[i]);
+            }
+            const sortedKeyIndices = keyLetters
+                .map((char, index) => ({ char, index }))
+                .sort((a, b) => a.char.localeCompare(b.char))
+                .map(item => item.index);
+            
+           
+            let cipherText = '';
+            for (const originalIndex of sortedKeyIndices) {
+                cipherText += columns[originalIndex].join('');
+            }
+
+            return cipherText;
+        }
+        //Расшифрование
+        function reverseColumnarTransposition(cipherText, key) {
+            const keyLetters = key.toUpperCase().replace(/[^A-Z]/g, '').split('');
+            const numColumns = keyLetters.length;
+            const textLength = cipherText.length;
+
+            if (numColumns === 0) return cipherText;
+
+            const numRows = Math.ceil(textLength / numColumns);
+            const numLongColumns = textLength % numColumns === 0 ? numColumns : textLength % numColumns;
+            
+            let colSizes = [];
+            for (let i = 0; i < numColumns; i++) {
+                colSizes.push(i < numLongColumns ? numRows : numRows - 1);
+            }
+
+            const sortedKeyMap = keyLetters
+                .map((char, index) => ({ char, originalIndex: index }))
+                .sort((a, b) => a.char.localeCompare(b.char));
+            
+            let currentTextIndex = 0;
+            const sortedColumns = Array.from({ length: numColumns }, () => []);
+
+            for (let i = 0; i < numColumns; i++) {
+                const size = colSizes[sortedKeyMap[i].originalIndex];
+                sortedColumns[sortedKeyMap[i].originalIndex] = cipherText.substring(currentTextIndex, currentTextIndex + size).split('');
+                currentTextIndex += size;
+            }
+
+            let substitutedText = '';
+            for (let r = 0; r < numRows; r++) {
+                for (let c = 0; c < numColumns; c++) {
+                    if (sortedColumns[c].length > r) {
+                        substitutedText += sortedColumns[c][r];
+                    }
+                }
+            }
+
+            return substitutedText;
+        }
+
+        function reverseSubstitute(substitutedText) {
+            let plaintext = '';
+        
+            if (substitutedText.length % 2 !== 0) {
+                 alert('Ошибка: Зашифрованный текст должен иметь четное количество символов ADFGVX.');
+                 return '';
+            }
+            
+            for (let i = 0; i < substitutedText.length; i += 2) {
+                const rowChar = substitutedText[i];
+                const colChar = substitutedText[i + 1];
+
+                const r = ADFGVX_CHARS.indexOf(rowChar);
+                const c = ADFGVX_CHARS.indexOf(colChar);
+
+                if (r !== -1 && c !== -1) {
+                    plaintext += POLYBIUS_GRID[r][c];
+                } else {
+                    alert('Ошибка: Зашифрованный текст содержит недопустимые символы.');
+                    return '';
+                }
+            }
+            return plaintext;
+        }
+
+
+        document.getElementById('encryptBtn').addEventListener('click', () => {
+            const inputText = document.getElementById('inputArea').value;
+            const key = document.getElementById('keyTranspositionInput').value;
+            
+            if (!key.trim().match(/^[A-Za-z]+$/)) {
+                alert('Пожалуйста, введите корректное слово-ключ перестановки (только латинские буквы).');
+                return;
+            }
+
+        
+            const substituted = substitute(inputText);
+            
+
+            const encryptedText = columnarTransposition(substituted, key);
+            
+            document.getElementById('outputArea').value = encryptedText;
+            document.getElementById('cipherInputArea').value = encryptedText; 
+        });
+
+        document.getElementById('decryptBtn').addEventListener('click', () => {
+            const inputText = document.getElementById('cipherInputArea').value;
+            const key = document.getElementById('keyTranspositionInput').value;
+
+            if (!key.trim().match(/^[A-Za-z]+$/)) {
+                alert('Пожалуйста, введите корректное слово-ключ перестановки (только латинские буквы).');
+                return;
+            }
+            
+       
+            const substituted = reverseColumnarTransposition(inputText, key);
+
+            const decryptedText = reverseSubstitute(substituted);
+
+            document.getElementById('outputArea').value = decryptedText;
+        });
+
+      
+        document.getElementById('keyTranspositionInput').addEventListener('input', (event) => {
+            event.target.value = event.target.value.replace(/[^A-Za-z]/g, '');
+        });
+        
+        document.getElementById('cipherInputArea').addEventListener('input', (event) => {
+             event.target.value = event.target.value.toUpperCase().replace(/[^ADFGVX]/g, '');
+        });
+
+    </script>
+</body>
+</html>
