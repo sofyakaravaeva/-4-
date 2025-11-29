@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Шифровальщик / Дешифровальщик Виженера (Латиница)</title>
+    <style>
+        /* Стили CSS остаются прежними для сохранения вида */
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f4f7f6;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            color: #333;
+        }
+
+        .container {
+            background-color: #ffffff;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            width: 90%;
+            max-width: 800px;
+        }
+
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 30px;
+        }
+
+        .section {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #34495e;
+        }
+
+        textarea, input[type="text"] {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            box-sizing: border-box;
+            font-size: 16px;
+            resize: vertical;
+            transition: border-color 0.3s;
+        }
+
+        textarea:focus, input[type="text"]:focus {
+            border-color: #3498db;
+            outline: none;
+        }
+
+        /* Поле для ключа (теперь текст) */
+        #keyInput {
+            width: 300px;
+            text-align: left;
+        }
+
+        /* Стили для кнопок */
+        .buttons {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 30px;
+        }
+
+        button {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: background-color 0.3s, transform 0.1s;
+        }
+
+        #encryptBtn {
+            background-color: #2ecc71; /* Зеленый */
+            color: white;
+        }
+
+        #decryptBtn {
+            background-color: #e74c3c; /* Красный */
+            color: white;
+        }
+
+        button:hover {
+            opacity: 0.9;
+        }
+
+        button:active {
+            transform: scale(0.98);
+        }
+
+        /* Стиль для окна вывода, чтобы оно выглядело как вывод */
+        #outputArea {
+            background-color: #ecf0f1;
+            min-height: 100px;
+            border: 1px dashed #bdc3c7;
+        }
+
+        /* Дополнительный стиль для поля ввода зашифрованного текста */
+        #cipherInputArea {
+            background-color: #f7f9fb;
+            border: 1px solid #bdc3c7;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Шифровальщик Виженера</h1>
+        <hr>
+
+        <div class="section">
+            <label for="inputArea">Текст для шифрования (только латинские буквы):</label>
+            <textarea id="inputArea" rows="4" placeholder="Введите текст, который нужно зашифровать..."></textarea>
+        </div>
+
+        <div class="section">
+            <label for="keyInput">Слово-ключ (только латинские буквы):</label>
+            <input type="text" id="keyInput" placeholder="Например, KEY" value="VIGENERE" inputmode="text">
+        </div>
+
+        <div class="buttons">
+            <button id="encryptBtn">Зашифровать</button>
+        </div>
+
+        <hr>
+
+        <div class="section">
+            <label for="cipherInputArea">Текст для дешифрования(только латинские буквы):</label>
+            <textarea id="cipherInputArea" rows="4" placeholder="Вставьте зашифрованный текст для расшифровки..."></textarea>
+        </div>
+
+        <div class="buttons">
+            <button id="decryptBtn">Расшифровать </button>
+        </div>
+
+        <hr>
+
+        <div class="section">
+            <label for="outputArea">Результат:</label>
+            <textarea id="outputArea" rows="4" readonly placeholder="Результат шифрования или дешифрования появится здесь..."></textarea>
+        </div>
+    </div>
+
+    <script>
+        // Функция Шифра Виженера 
+        
+        function vigenereCipher(text, key, decrypt = false) {
+            let result = '';
+            let keyIndex = 0;
+           
+            const normalizedKey = key.toUpperCase().replace(/[^A-Z]/g, '');
+
+            if (!normalizedKey) {
+                return text; 
+            }
+
+            for (let i = 0; i < text.length; i++) {
+                let char = text[i];
+                let code = char.charCodeAt(0);
+
+                let start, alphabetSize;
+
+                if (code >= 65 && code <= 90) { // Латиница, заглавные (A-Z)
+                    start = 65; alphabetSize = 26;
+                } else if (code >= 97 && code <= 122) { // Латиница, строчные (a-z)
+                    start = 97; alphabetSize = 26;
+                } else {
+
+                    result += char;
+                    continue;
+                }
+                
+                let keyChar = normalizedKey[keyIndex % normalizedKey.length];
+                let keyCharCode = keyChar.charCodeAt(0);
+                
+                let keyStart = 65; 
+                let keyShift = keyCharCode - keyStart; // От 0 до 25
+                
+                // Если дешифрование, смещение должно быть обратным
+                if (decrypt) {
+                    keyShift = -keyShift;
+                }
+                
+              
+                let charOffset = code - start; // Позиция текущей буквы (0-25)
+                let newCodeOffset = (charOffset + keyShift) % alphabetSize;
+                
+                if (newCodeOffset < 0) {
+                    newCodeOffset += alphabetSize;
+                }
+
+                result += String.fromCharCode(newCodeOffset + start);
+
+                keyIndex++;
+            }
+
+            return result;
+        }
+
+      
+
+        // Зашифровать
+        document.getElementById('encryptBtn').addEventListener('click', () => {
+            const inputText = document.getElementById('inputArea').value;
+            const key = document.getElementById('keyInput').value;
+
+            if (!key.trim().match(/^[A-Za-z]+$/)) {
+                alert('Пожалуйста, введите корректное слово-ключ, состоящее только из латинских букв.');
+                return;
+            }
+
+            const encryptedText = vigenereCipher(inputText, key, false);
+            document.getElementById('outputArea').value = encryptedText;
+        });
+
+        // Расшифровать
+        document.getElementById('decryptBtn').addEventListener('click', () => {
+            const inputText = document.getElementById('cipherInputArea').value; 
+            const key = document.getElementById('keyInput').value;
+
+            // Проверка: ключ должен состоять только из латинских букв
+            if (!key.trim().match(/^[A-Za-z]+$/)) {
+                alert('Пожалуйста, введите корректное слово-ключ, состоящее только из латинских букв.');
+                return;
+                
+            }
+
+            const decryptedText = vigenereCipher(inputText, key, true);
+            document.getElementById('outputArea').value = decryptedText;
+        });
+
+        // ввод только латинских букв в поле ключа
+        document.getElementById('keyInput').addEventListener('input', (event) => {
+            // Удаляем все, кроме латинских букв (A-Z, a-z)
+            event.target.value = event.target.value.replace(/[^A-Za-z]/g, '');
+        });
+    </script>
+</body>
+</html>
